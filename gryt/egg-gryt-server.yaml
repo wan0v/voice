@@ -231,7 +231,7 @@ variables:
     sort: 5
   -
     name: 'SFU Public Host'
-    description: 'Public address of the SFU given to clients, e.g. 203.0.113.10:5005 or sfu.example.com:5005 (wss://... behind a TLS proxy). Required for voice over the internet.'
+    description: 'Public address of the SFU given to clients, e.g. 203.0.113.10:5005 or sfu.example.com:5005 (wss://... behind a TLS proxy only!). Required for voice over the internet.'
     env_variable: SFU_PUBLIC_HOST
     default_value: ''
     user_viewable: true
@@ -255,7 +255,7 @@ variables:
     sort: 7
   -
     name: 'ICE Advertise IP'
-    description: 'Public IP(s) advertised in ICE candidates, comma-separated. Leave empty to auto-discover via STUN.'
+    description: 'Public IP(s) advertised in ICE candidates, comma-separated (e.g. 203.0.113.10, 203.0.113.11). Leave empty if STUN auto-discovery works. Set your public IP if the server runs behind NAT or voice does not work.'
     env_variable: ICE_ADVERTISE_IP
     default_value: ''
     user_viewable: true

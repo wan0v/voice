@@ -42,7 +42,7 @@ the server is behind NAT and STUN picks the wrong address.
 | `SFU_PORT` | `5005` | TCP port of the SFU websocket — must match extra allocation #1 |
 | `SFU_PUBLIC_HOST` | *(empty)* | Public SFU address given to clients (see above) |
 | `ICE_UDP_MUX_PORT` | `3478` | UDP port all WebRTC media flows over — must match extra allocation #2 |
-| `ICE_ADVERTISE_IP` | *(empty)* | Public IP(s) advertised in ICE candidates, comma-separated |
+| `ICE_ADVERTISE_IP` | *(empty)* | Public IP(s) advertised in ICE candidates; may be required behind when voice does not work |
 | `MAX_PEERS` | `200` | Max peers connected to the SFU at once |
 | `STUN_SERVERS` | Google STUN | Comma-separated STUN URIs |
 | `CORS_ORIGIN` | `http://127.0.0.1:15738,https://app.gryt.chat` | Allowed origins (desktop app + hosted web client) |
@@ -50,6 +50,16 @@ the server is behind NAT and STUN picks the wrong address.
 | `EXTERNAL_HOST` | *(empty)* | URL clients use to reach this server, e.g. `http://203.0.113.10:5000` |
 | `IMAGE_WORKER_ENABLED` | `true` | Thumbnails, recompression and voice tile colors |
 | `DISABLE_STUN` | `false` | Disable server-side STUN. Only with a direct, port-preserving path to the internet; set `ICE_ADVERTISE_IP` instead |
+
+## Voice troubleshooting
+
+If chat works but voice does not, check all three allocations:
+
+- `SFU_PORT` must be reachable over TCP.
+- `ICE_UDP_MUX_PORT` must be reachable over UDP.
+- Both values must match the corresponding allocations.
+
+If the desktop client cannot reach the voice server, or users connect without audio, set `ICE_ADVERTISE_IP` to the public IP through which the UDP media port is reachable. Do not use `127.0.0.1`, `0.0.0.0`, or a private container/LAN address. `DISABLE_STUN` should normally remain `false`.
 
 ## Updating
 
