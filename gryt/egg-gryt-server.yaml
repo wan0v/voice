@@ -2,7 +2,7 @@ _comment: 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL'
 meta:
   version: PLCN_v3
   update_url: 'https://raw.githubusercontent.com/pelican-eggs/voice/refs/heads/main/gryt/egg-gryt-server.yaml'
-exported_at: '2026-08-23T18:03:35+00:00'
+exported_at: '2026-09-06T16:00:35+00:00'
 name: 'Gryt Server'
 author: 138704619+wan0v@users.noreply.github.com
 uuid: c40233e9-3b54-466b-b82f-1d7fd0a28d28
@@ -21,12 +21,10 @@ tags:
   - voice
 features: {  }
 docker_images:
-  Node.js 22: 'ghcr.io/pelican-eggs/yolks:nodejs_22'
   Node.js 24: 'ghcr.io/pelican-eggs/yolks:nodejs_24'
-file_denylist:
-  - gryt_start.sh
+file_denylist: [  ]
 startup_commands:
-  Default: 'bash gryt_start.sh'
+  Default: 'bash -c ''if [ -z "$JWT_SECRET" ]; then [ -f .jwt_secret ] || head -c 48 /dev/urandom | base64 > .jwt_secret; export JWT_SECRET="$(cat .jwt_secret)"; fi; ./gryt_sfu & if [ "$IMAGE_WORKER_ENABLED" != "false" ]; then node --env-file=config.env image-worker/dist/index.js & fi; exec node --env-file=config.env server/dist/index.js'''
 config:
   files:
     config.env:
@@ -105,63 +103,6 @@ scripts:
 
       chmod +x /mnt/server/gryt_sfu
       mkdir -p /mnt/server/data
-
-      ## Write the startup wrapper (config.env itself is written by wings on
-      ## every boot from the egg's configuration files - no bootstrap needed)
-      cat > /mnt/server/gryt_start.sh <<'STARTEOF'
-      #!/bin/bash
-      cd /home/container
-
-      # Version installed by the egg's install script
-      export SERVER_VERSION="__GRYT_VERSION__"
-
-      # node:sqlite is only available from Node.js 22.13 onwards
-      NODE_VER=$(node -p "process.versions.node" 2>/dev/null || echo "0.0.0")
-      NODE_MAJOR=${NODE_VER%%.*}
-      NODE_MINOR=$(echo "${NODE_VER}" | cut -d. -f2)
-      if [ "${NODE_MAJOR}" -lt 22 ] || { [ "${NODE_MAJOR}" -eq 22 ] && [ "${NODE_MINOR}" -lt 13 ]; }; then
-          echo "ERROR: Gryt needs Node.js 22.13 or later (found v${NODE_VER})."
-          echo "Pick the 'Node.js 22' or 'Node.js 24' docker image in the server settings."
-          exit 1
-      fi
-
-      if [ ! -x ./gryt_sfu ]; then
-          echo "ERROR: ./gryt_sfu is missing or not executable - reinstall the server."
-          exit 1
-      fi
-
-      # JWT secret: the panel variable wins; otherwise generate once and persist
-      if [ -z "${JWT_SECRET}" ]; then
-          if [ ! -f /home/container/.jwt_secret ]; then
-              head -c 48 /dev/urandom | base64 > /home/container/.jwt_secret
-              echo "Generated a new JWT secret (stored in .jwt_secret)"
-          fi
-          export JWT_SECRET="$(cat /home/container/.jwt_secret)"
-      fi
-
-      # SFU (voice/video), configured via env: SFU_PORT, ICE_UDP_MUX_PORT, ICE_ADVERTISE_IP, MAX_PEERS, STUN_SERVERS, DISABLE_STUN
-      echo "Starting Gryt SFU on port ${SFU_PORT:-5005} (media UDP ${ICE_UDP_MUX_PORT:-3478})..."
-      ./gryt_sfu &
-      SFU_PID=$!
-
-      # Image worker - thumbnails and recompression (optional)
-      if [ "${IMAGE_WORKER_ENABLED}" != "false" ]; then
-          echo "Starting Gryt image worker..."
-          node --env-file=config.env image-worker/dist/index.js &
-      fi
-
-      # Surface an immediately crashing SFU instead of a silent voice outage
-      sleep 2
-      if ! kill -0 ${SFU_PID} 2>/dev/null; then
-          echo "ERROR: The SFU (gryt_sfu) exited right after starting - see its output above."
-      fi
-
-      # Signaling server in the foreground
-      echo "Starting Gryt server v${SERVER_VERSION}..."
-      exec node --env-file=config.env server/dist/index.js
-      STARTEOF
-      sed -i "s/__GRYT_VERSION__/${RESOLVED_VERSION}/" /mnt/server/gryt_start.sh
-      chmod +x /mnt/server/gryt_start.sh
 
       echo "Installation of Gryt Server v${RESOLVED_VERSION} complete."
       exit 0
